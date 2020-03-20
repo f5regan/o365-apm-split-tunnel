@@ -57,7 +57,7 @@ care_skype = 1                          # "Skype for Business Online and Microso
 care_common = 1                         # "Microsoft 365 Common and Office Online": 0=do not care, 1=care
 
 # O365 Record types to download & update
-use_url = 0                             # DNS/URL exclusions: 0=do not use, 1=use
+use_url = 1                             # DNS/URL exclusions: 0=do not use, 1=use
 use_ipv4 = 1                            # IPv4 exclusions: 0=do not use, 1=use
 use_ipv6 = 0                            # IPv6 exclusions: 0=do not use, 1=use
 
