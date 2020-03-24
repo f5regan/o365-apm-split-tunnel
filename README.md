@@ -12,9 +12,9 @@ This script fetches Office 365 URLs and IPs (IPv4 and/or IPv6) from Microsoft's 
 ## Things to Note
 *	This script does not enable “split tunneling” or make any other modifications, other than those mentioned, to the Network Access List(s) that may be required to enable the desired functionality. For guidance relating to Network Access List / Split Tunnelling configuration refer to the [BIG-IP APM Knowledge Center](https://support.f5.com/csp/knowledge-center/software/BIG-IP?module=BIG-IP%20APM).
   * Some split tunneling guidance:
-    * **Allow Local DNS Servers** should be enabled to allow client access to Office 365 when VPN is disconnected
-    * Exclude doesn't work for IPv6 on macOS
-    * Exclude by FQDN is not supported on macOS
+    * *Allow Local DNS Servers* should be enabled to allow client access to Office 365 when VPN is disconnected
+    * DNS Exclude Address Space is not supported on macOS
+    * IPV6 Exclude Address Space doesn't currently work on macOS
 * This script should not be used with BIG-IP Edge Client's Always Connected Mode: if Stonewall is configured to block traffic, then the excluded resources are not reachable (this is by design).
 * This script tracks the version of the Office 365 service instance and will only update the exclusion lists if a newer version is detected. If modifications to the script's operating parameters (ex. Network Access Lists, O365 Service Areas, Additional URLs/IPs to Exclude) are made, they will NOT take effect until the script detects a new service instance version. To force the script to run with the updated parameters earlier, remove the o365_version.txt file from the script's working directory OR *temporarily* set `force_o365_record_refresh = 1`, then manually execute the script (`python /shared/o365/apm_o365_update.py`).
 * This script *overwrites the contents* of the following fields in the defined Network Access Lists when an update is detected:
@@ -39,7 +39,7 @@ This script fetches Office 365 URLs and IPs (IPv4 and/or IPv6) from Microsoft's 
   `bash`
 4. Create the directory the script will reside in. The default directory is /shared/o365/.  
   `mkdir /shared/o365`  
-  *Note: If not creating the directory as it is above, ensure you update the **work_directory** variable under **System Options** with the correct path.*
+  *Note: If not creating the directory as it is above, ensure you update the variables under **System Options** with the correct path.*
 5. Upload or create the script (apm_o365_update.py) in the working directory (default path: /shared/o365/)
 6. Manually run the script  
   `python /shared/o365/apm_o365_update.py`
@@ -51,6 +51,10 @@ This script fetches Office 365 URLs and IPs (IPv4 and/or IPv6) from Microsoft's 
     Confirm the appropriate fields are populated in the relevant Network Access Lists:
     
     ![alt text](images/exclude_address_populated.png "IPV4 Exclude Address Space and DNS Exclude Address Space populated with Office 365 endpoints")
+    
+    Confirm the appropriate Access Profiles/Per-Session Policies have been applied/committed (green flag).
+    
+    ![alt text](images/policy_applied.png "Applied policy (green flag)")
 8. If this is an HA pair, repeat steps 2 - 7. Note, it is normal for the Standby BIG-IP to log the following message when the update script is run:  
  `This BIG-IP is HA STANDBY. Aborting O365 update.`
 9. On the Active BIG-IP, create an iCall script. This script executes the apm_o365_update.py script when it is called by an iCall handler, which we will create in the next step. Ensure the correct path to the script is referenced, in case defaults were not used.  
@@ -60,11 +64,13 @@ This script fetches Office 365 URLs and IPs (IPv4 and/or IPv6) from Microsoft's 
  `tmsh create sys icall handler periodic o365_update_handler script o365_update_script interval 3600`  
  Run once every 24 hours (86400 seconds), starting on March 20, 2020 at 03:00:  
  `tmsh create sys icall handler periodic o365_update_handler script o365_update_script interval 86400 first-occurrence 2020-03-20:03:00:00`
-11. Synchronize changes from the Active BIG-IP to the Standby BIG-IP
+11. On the Active BIG-IP, save changes:
+ `tmsh save sys config`
+12. Synchronize changes from the Active BIG-IP to the Standby BIG-IP
 
 This concludes the steps required to install this script.
 
-## Apendix
+## Appendix
 
 ### User Options
 * **na_lists** - Specify the Network Access Lists that this script will load the Office 365 URLs/IPs into.
