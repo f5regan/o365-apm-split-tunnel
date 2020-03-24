@@ -60,12 +60,15 @@ This script fetches Office 365 URLs and IPs (IPv4 and/or IPv6) from Microsoft's 
 9. On the Active BIG-IP, create an iCall script. This script executes the apm_o365_update.py script when it is called by an iCall handler, which we will create in the next step. Ensure the correct path to the script is referenced, in case defaults were not used.  
  `tmsh create sys icall script o365_update_script definition { catch { exec python /shared/o365/apm_o365_update.py } }`
 10. On the Active BIG-IP, create an iCall handler. This handler will run at the configured interval and will execute the iCall script, which in turn executes the apm_o365_update.py Python script. A few examples of periodic handlers are given, choose (and adapt) the one that suits your needs best.  
- Run once every 60 minutes (3600 seconds), starting now:  
- `tmsh create sys icall handler periodic o365_update_handler script o365_update_script interval 3600`  
- Run once every 24 hours (86400 seconds), starting on March 20, 2020 at 03:00:  
- `tmsh create sys icall handler periodic o365_update_handler script o365_update_script interval 86400 first-occurrence 2020-03-20:03:00:00`
-11. On the Active BIG-IP, save changes:
- `tmsh save sys config`
+
+    Run once every 60 minutes (3600 seconds), starting now:  
+    `tmsh create sys icall handler periodic o365_update_handler script o365_update_script interval 3600`  
+ 
+    Run once every 24 hours (86400 seconds), starting on March 20, 2020 at 03:00:  
+    `tmsh create sys icall handler periodic o365_update_handler script o365_update_script interval 86400 first-occurrence 2020-03-20:03:00:00`
+
+11. On the Active BIG-IP, save changes:  
+  `tmsh save sys config`
 12. Synchronize changes from the Active BIG-IP to the Standby BIG-IP
 
 This concludes the steps required to install this script.
