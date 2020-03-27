@@ -10,6 +10,7 @@ This script fetches Office 365 URLs and IPs (IPv4 and/or IPv6) from Microsoft's 
 * Bash shell access on the BIG-IP(s)
 
 ## Things to Note
+* This software is supplied "AS IS" without any warranties or support.
 *	This script does not enable “split tunneling” or make any other modifications, other than those mentioned, to the Network Access List(s) that may be required to enable the desired functionality. For guidance relating to Network Access List / Split Tunnelling configuration refer to the [BIG-IP APM Knowledge Center](https://support.f5.com/csp/knowledge-center/software/BIG-IP?module=BIG-IP%20APM).
   * Some split tunneling guidance:
     * *Allow Local DNS Servers* should be enabled to allow client access to Office 365 when VPN is disconnected
