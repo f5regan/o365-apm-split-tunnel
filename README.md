@@ -123,6 +123,14 @@ This concludes the steps required to install this script.
     * 1 - Import endpoints from this service area
   * *Usage example:*
     * care_common = 1 (import Common endpoints)
+* **o365_categories** - Specify which endpoint categories to import.
+  * *Default:* 0
+  * *Options:*
+    * 0 - Import "Optimize" endpoints
+    * 1 - Import "Optimize" and "Allow" endpoints
+    * 2 - Import all endpoints (Optimize, Allow, Default)
+  * *Usage example:*
+    * o365_categories = 0 (only import "Optimize" endpoints)
 * **use_url** - Specify whether to import Office 365 URLs (populates DNS Exclude Address Space).
   * *Default:* 1
   * *Options:*

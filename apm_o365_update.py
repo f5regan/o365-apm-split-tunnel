@@ -1,8 +1,8 @@
 #!/bin/python
 # -*- coding: utf-8 -*-
 # O365 URL/IP update automation for BIG-IP
-# Version: 1.0
-# Last Modified: 18 March 2020
+# Version: 1.1
+# Last Modified: 01 April 2020
 # Original author: Makoto Omura, F5 Networks Japan G.K.
 #
 # Modified for APM Network Access "Exclude Address Space" by Regan Anderson, F5 Networks
@@ -57,9 +57,12 @@ care_skype = 1                          # "Skype for Business Online and Microso
 care_common = 1                         # "Microsoft 365 Common and Office Online": 0=do not care, 1=care
 
 # O365 Record types to download & update
-use_url = 1                             # DNS/URL exclusions: 0=do not use, 1=use
+use_url = 0                             # DNS/URL exclusions: 0=do not use, 1=use
 use_ipv4 = 1                            # IPv4 exclusions: 0=do not use, 1=use
 use_ipv6 = 0                            # IPv6 exclusions: 0=do not use, 1=use
+
+# O365 Categories to download & update
+o365_categories = 0                     # 0=Optimize only, 1= Optimize & Allow, 2 = Optimize, Allow, and Default
 
 # O365 Endpoints to import - O365 required endpoints or all endpoints
 # WARNING: "import all" includes non-O365 URLs that one may not want to bypass (ex. www.youtube.com)
@@ -91,7 +94,7 @@ force_o365_record_refresh = 0           # 0=do not update, 1=update (for test/de
 
 # BIG-IP HA Configuration
 device_group_name = "device-group1"     # Name of Sync-Failover Device Group.  Required for HA paired BIG-IP.
-ha_config = 0                                    # 0=stand alone, 1=HA paired
+ha_config = 0                           # 0=stand alone, 1=HA paired
 
 # Log configuration
 log_level = 1                           # 0=none, 1=normal, 2=verbose
@@ -117,7 +120,6 @@ uri_ms_o365_version = "/version?ClientRequestId="
 list_urls_to_exclude = []
 list_ipv4_to_exclude = []
 list_ipv6_to_exclude = []
-failover_state = ""
 
 def log(lev, msg):
     if log_level >= lev:
@@ -135,10 +137,8 @@ def main():
     result = commands.getoutput("tmsh show /cm failover-status field-fmt")
 
     if ("status ACTIVE" in result) or (ha_config == 0):
-        failover_state = "active"       # For future use
         log(1, "This BIG-IP is standalone or HA ACTIVE. Initiating O365 update.")
     else:
-        failover_state = "non-active"   # For future use
         log(1, "This BIG-IP is HA STANDBY. Aborting O365 update.")
         sys.exit(0)
 
@@ -256,43 +256,47 @@ def main():
     # Process for each record(id) of the endpoint JSON data
     for dict_o365_record in dict_o365_all:
         service_area = str(dict_o365_record['serviceArea'])
-        id = str(dict_o365_record['id'])
+        category = str(dict_o365_record['category'])
 
-        if (only_required == 0) or (only_required and str(dict_o365_record['required']) == "True"):
+        if (o365_categories == 0 and category == "Optimize") \
+            or (o365_categories == 1 and (category == "Optimize" or category == "Allow")) \
+            or (o365_categories == 2):
+    
+            if (only_required == 0) or (only_required and str(dict_o365_record['required']) == "True"):
 
-            if (care_common and service_area == "Common") \
-                or (care_exchange and service_area == "Exchange") \
-                or (care_sharepoint and service_area == "SharePoint") \
-                or (care_skype and service_area == "Skype"):
+                if (care_common and service_area == "Common") \
+                    or (care_exchange and service_area == "Exchange") \
+                    or (care_sharepoint and service_area == "SharePoint") \
+                    or (care_skype and service_area == "Skype"):
 
-                if use_url:
-                    # Append "urls" if existent in each record
-                    if dict_o365_record.has_key('urls'):
-                        list_urls = list(dict_o365_record['urls'])
-                        for url in list_urls:
-                            list_urls_to_exclude.append(url)
+                    if use_url:
+                        # Append "urls" if existent in each record
+                        if dict_o365_record.has_key('urls'):
+                            list_urls = list(dict_o365_record['urls'])
+                            for url in list_urls:
+                                list_urls_to_exclude.append(url)
 
-                    # Append "allowUrls" if existent in each record
-                    if dict_o365_record.has_key('allowUrls'):
-                        list_allow_urls = list(dict_o365_record['allowUrls'])
-                        for url in list_allow_urls:
-                            list_urls_to_exclude.append(url)
+                        # Append "allowUrls" if existent in each record
+                        if dict_o365_record.has_key('allowUrls'):
+                            list_allow_urls = list(dict_o365_record['allowUrls'])
+                            for url in list_allow_urls:
+                                list_urls_to_exclude.append(url)
 
-                    # Append "defaultUrls" if existent in each record
-                    if dict_o365_record.has_key('defaultUrls'):
-                        list_default_urls = dict_o365_record['defaultUrls']
-                        for url in list_default_urls:
-                            list_urls_to_exclude.append(url)
+                        # Append "defaultUrls" if existent in each record
+                        if dict_o365_record.has_key('defaultUrls'):
+                            list_default_urls = dict_o365_record['defaultUrls']
+                            for url in list_default_urls:
+                                list_urls_to_exclude.append(url)
 
-                if use_ipv4 or use_ipv6:
-                    # Append "ips" if existent in each record
-                    if dict_o365_record.has_key('ips'):
-                        list_ips = list(dict_o365_record['ips'])
-                        for ip in list_ips:
-                            if re.match('^.+:', ip):
-                                list_ipv6_to_exclude.append(ip)
-                            else:
-                                list_ipv4_to_exclude.append(ip)
+                    if use_ipv4 or use_ipv6:
+                        # Append "ips" if existent in each record
+                        if dict_o365_record.has_key('ips'):
+                            list_ips = list(dict_o365_record['ips'])
+                            for ip in list_ips:
+                                if re.match('^.+:', ip):
+                                    list_ipv6_to_exclude.append(ip)
+                                else:
+                                    list_ipv4_to_exclude.append(ip)
 
     log(1, "Number of unique ENDPOINTS to import...")
 
