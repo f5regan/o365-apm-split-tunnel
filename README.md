@@ -1,5 +1,8 @@
 # BIG-IP APM Split Tunneling & Dynamic Exclusion of Office 365 (O365) URLs/IPs
 
+> NOTE: TMOS 16.1.0 introduces a new feature to BIG-IP: APM called Address Spaces. This feature can dynamically fetch Office 365 and Zoom IPv4 addresses, IPv6 addresses, as well as DNS names into an address space object, which can then be used in your split tunnel configuration. Documentation on this feature can be found here: https://techdocs.f5.com/en-us/bigip-16-1-0/big-ip-access-policy-manager-network-access/configuring-address-spaces.html
+> In light of this new built-in functionality I have ceased development on this project
+
 This script fetches Office 365 URLs and IPs (IPv4 and/or IPv6) from Microsoft's [Office 365 IP Address and URL web service](https://docs.microsoft.com/en-us/office365/enterprise/office-365-ip-web-service), dynamically updates Network Access List "Exclude" properties for one or more Network Access Lists, and applies changes to the affected Access Policies. If the script is running on an HA pair of BIG-IPs then the script will also initiate a ConfigSync to push the updated configuration from the active BIG-IP to the standby BIG-IP.
 
 ## Script Requirements
